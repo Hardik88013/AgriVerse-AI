@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import AddFarm from './pages/AddFarm';
 import ProtectedRoute from './components/ProtectedRoute';
+import DashboardLayout from './layouts/DashboardLayout';
 
 function App() {
   return (
@@ -31,8 +32,12 @@ function App() {
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route element={<DashboardLayout />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/profile" element={<Profile />} />
+                  {/* Farms list will go here in the future */}
+                </Route>
+                {/* AddFarm keeps old top-nav layout for focus */}
                 <Route path="/add-farm" element={<AddFarm />} />
               </Route>
 

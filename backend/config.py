@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     cloudinary_cloud_name: str = Field(..., env='CLOUDINARY_CLOUD_NAME')
     cloudinary_api_key: str = Field(..., env='CLOUDINARY_API_KEY')
     cloudinary_api_secret: str = Field(..., env='CLOUDINARY_API_SECRET')
+    
+    # Weather
+    weather_api_key: str = Field("MOCK_KEY", env='WEATHER_API_KEY')
 
     class Config:
         env_file = ".env"

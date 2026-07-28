@@ -1,49 +1,98 @@
-// Purpose: Analytics dashboard for the user's farms.
+// Purpose: Central Hub for the farmer. Aggregates KPI stats, Weather, and Charts.
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Plus, TrendingUp, Droplets, Leaf } from 'lucide-react';
+import { MapPin, TrendingUp, Droplets, Leaf } from 'lucide-react';
 import api from '../services/api';
+import WeatherWidget from '../components/WeatherWidget';
+import ForecastWidget from '../components/ForecastWidget';
+import { WeatherCharts } from '../components/WeatherCharts';
 
 const Dashboard = () => {
+  const [stats, setStats] = useState({ totalFarms: 0, totalArea: 0, activeAlerts: 0 });
   const [farms, setFarms] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedFarmId, setSelectedFarmId] = useState<string | null>(null);
+  
+  const [weather, setWeather] = useState<any>(null);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
 
+  // 1. Fetch Dashboard Stats and list of farms
   useEffect(() => {
-    const fetchFarms = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const res = await api.get('/farms/');
-        setFarms(res.data);
+        const [statsRes, farmsRes] = await Promise.all([
+          api.get('/dashboard/summary'),
+          api.get('/farms/')
+        ]);
+        setStats(statsRes.data);
+        setFarms(farmsRes.data);
+        
+        // Auto-select the first farm for weather
+        if (farmsRes.data.length > 0) {
+          setSelectedFarmId(farmsRes.data[0].id);
+        }
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load dashboard data", err);
       } finally {
-        setIsLoading(false);
+        setIsStatsLoading(false);
       }
     };
-    fetchFarms();
+    fetchDashboardData();
   }, []);
 
-  if (isLoading) return <div className="text-center mt-20">Loading Dashboard...</div>;
+  // 2. Fetch Weather when a farm is selected
+  useEffect(() => {
+    const fetchWeather = async () => {
+      if (!selectedFarmId) return;
+      
+      setIsWeatherLoading(true);
+      try {
+        const res = await api.get(`/weather/${selectedFarmId}`);
+        setWeather(res.data);
+      } catch (err) {
+        console.error("Failed to load weather", err);
+        setWeather(null);
+      } finally {
+        setIsWeatherLoading(false);
+      }
+    };
+    
+    fetchWeather();
+  }, [selectedFarmId]);
 
-  const totalArea = farms.reduce((acc, farm) => acc + (farm.area || 0), 0);
+  if (isStatsLoading) {
+    return <div className="text-center mt-20 font-bold text-gray-500 animate-pulse">Loading Smart Dashboard...</div>;
+  }
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Farm Dashboard</h1>
-        <Link to="/add-farm" className="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 font-semibold transition-colors">
-          <Plus size={20} />
-          Add New Farm
-        </Link>
+    <div className="space-y-6">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Farm Overview</h1>
+          <p className="text-gray-500 mt-1">Welcome back. Here is your agriculture summary.</p>
+        </div>
+        
+        {/* Farm Selector for Weather */}
+        {farms.length > 0 && (
+          <select 
+            className="p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary"
+            value={selectedFarmId || ''}
+            onChange={(e) => setSelectedFarmId(e.target.value)}
+          >
+            {farms.map(f => (
+              <option key={f.id} value={f.id}>{f.name} ({f.village})</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow p-6 border-l-4 border-primary">
           <div className="flex items-center gap-4">
             <div className="bg-green-100 p-3 rounded-full"><MapPin className="text-primary" /></div>
             <div>
               <p className="text-sm text-gray-500 font-semibold">Total Farms</p>
-              <h3 className="text-2xl font-bold">{farms.length}</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalFarms}</h3>
             </div>
           </div>
         </div>
@@ -52,7 +101,7 @@ const Dashboard = () => {
             <div className="bg-yellow-100 p-3 rounded-full"><TrendingUp className="text-yellow-600" /></div>
             <div>
               <p className="text-sm text-gray-500 font-semibold">Total Area</p>
-              <h3 className="text-2xl font-bold">{totalArea.toFixed(2)} Acres</h3>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.totalArea.toFixed(1)} Acres</h3>
             </div>
           </div>
         </div>
@@ -60,50 +109,39 @@ const Dashboard = () => {
           <div className="flex items-center gap-4">
             <div className="bg-blue-100 p-3 rounded-full"><Droplets className="text-blue-600" /></div>
             <div>
-              <p className="text-sm text-gray-500 font-semibold">Irrigation</p>
-              <h3 className="text-2xl font-bold">Active</h3>
+              <p className="text-sm text-gray-500 font-semibold">Irrigation Status</p>
+              <h3 className="text-2xl font-bold text-gray-900">Optimal</h3>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow p-6 border-l-4 border-purple-500">
+        <div className="bg-white rounded-xl shadow p-6 border-l-4 border-red-500">
           <div className="flex items-center gap-4">
-            <div className="bg-purple-100 p-3 rounded-full"><Leaf className="text-purple-600" /></div>
+            <div className="bg-red-100 p-3 rounded-full"><Leaf className="text-red-600" /></div>
             <div>
-              <p className="text-sm text-gray-500 font-semibold">Soil Health</p>
-              <h3 className="text-2xl font-bold">Good</h3>
+              <p className="text-sm text-gray-500 font-semibold">Active Alerts</p>
+              <h3 className="text-2xl font-bold text-gray-900">{stats.activeAlerts}</h3>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Farm List */}
-      <h2 className="text-xl font-bold mb-4 text-gray-800">My Farms</h2>
-      {farms.length === 0 ? (
-        <div className="bg-white rounded-xl shadow p-12 text-center">
-          <p className="text-gray-500 mb-4">You haven't registered any farms yet.</p>
-          <Link to="/add-farm" className="text-primary font-semibold hover:underline">Register your first farm here &rarr;</Link>
+      {/* Weather Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 h-[300px]">
+          <WeatherWidget weather={weather} isLoading={isWeatherLoading} />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {farms.map(farm => (
-            <div key={farm.id} className="bg-white rounded-xl shadow overflow-hidden flex flex-col">
-              {farm.images && farm.images.length > 0 ? (
-                <img src={farm.images[0]} alt={farm.name} className="w-full h-48 object-cover" />
-              ) : (
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400">No Image</div>
-              )}
-              <div className="p-4 flex-grow">
-                <h3 className="text-lg font-bold text-gray-900">{farm.name}</h3>
-                <p className="text-sm text-gray-500 mb-2">{farm.village}, {farm.district}</p>
-                <div className="flex justify-between items-center mt-4">
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">{farm.farmType}</span>
-                  <span className="font-semibold">{farm.area} {farm.unit}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="lg:col-span-2 h-[300px]">
+          <ForecastWidget forecast={weather?.forecast} isLoading={isWeatherLoading} />
+        </div>
+      </div>
+
+      {/* Analytics Charts */}
+      {weather && weather.forecast && (
+        <div className="mt-8">
+           <WeatherCharts forecast={weather.forecast} />
         </div>
       )}
+
     </div>
   );
 };

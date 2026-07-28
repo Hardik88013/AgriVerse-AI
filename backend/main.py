@@ -53,11 +53,14 @@ app.add_middleware(
 
 # Include our Routers
 # Why it exists: This tells FastAPI to connect the routes we defined in separate files to our main application.
-from routers import auth_router, farm_router
+from routers import auth_router, farm_router, weather_router, dashboard_router, notification_router
 app.include_router(health_router.router)
 app.include_router(users_router.router)
 app.include_router(auth_router.router)
 app.include_router(farm_router.router)
+app.include_router(weather_router.router)
+app.include_router(dashboard_router.router)
+app.include_router(notification_router.router)
 
 if __name__ == "__main__":
     import uvicorn
