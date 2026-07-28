@@ -1,66 +1,32 @@
 # Purpose: To handle all API requests related to Users.
-# How it works: Defines GET and POST routes for the Users collection.
-# Why it exists: To separate user-related logic from other features (like ML predictions).
-# Used by: main.py
-
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from database import get_database
-from schemas.user_schema import UserCreate, UserResponse
+from schemas.user_schema import UserResponse
+from auth.dependencies import get_current_user, require_role
 from bson import ObjectId
 
-# Initialize the router with a prefix
 router = APIRouter(prefix="/users", tags=["Users"])
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate):
+@router.get("/me", response_model=UserResponse)
+async def get_my_profile(current_user: UserResponse = Depends(get_current_user)):
     """
-    Input: UserCreate schema (name, email, password)
-    Output: UserResponse schema (id, name, email)
-    Logic: Inserts a new document into the 'users' collection in MongoDB.
-    Time Complexity: O(1) for insertion.
-    Future improvements: Hash the password using bcrypt before saving it!
+    Input: JWT Token in header (handled by get_current_user).
+    Output: The logged-in user's profile.
+    Logic: The `Depends(get_current_user)` automatically blocks unauthenticated requests.
     """
-    db = get_database()
-    
-    # Check if user already exists
-    existing_user = await db.users.find_one({"email": user.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Create user dictionary
-    user_dict = user.model_dump()
-    
-    # In a real app, hash the password here! For now, we save it raw (bad practice, but okay for foundation)
-    
-    # Insert into database
-    result = await db.users.insert_one(user_dict)
-    
-    # Return the response matching our UserResponse schema
-    return UserResponse(
-        id=str(result.inserted_id),
-        name=user.name,
-        email=user.email
-    )
+    return current_user
 
 @router.get("/", response_model=list[UserResponse])
-async def get_all_users():
+async def get_all_users(current_user: UserResponse = Depends(require_role(["Admin"]))):
     """
-    Input: None
-    Output: A list of UserResponse objects.
-    Logic: Retrieves all users from the MongoDB collection.
-    Time Complexity: O(N) where N is number of users.
-    Future improvements: Add pagination (limit and offset) so we don't return 1,000,000 users at once!
+    Input: JWT Token in header.
+    Output: A list of all users.
+    Logic: Only users with the 'Admin' role can access this endpoint.
     """
     db = get_database()
     users = []
-    
-    # Iterate through the async cursor
     cursor = db.users.find({})
     async for document in cursor:
-        users.append(UserResponse(
-            id=str(document["_id"]),
-            name=document.get("name", ""),
-            email=document.get("email", "")
-        ))
-        
+        document["id"] = str(document["_id"])
+        users.append(UserResponse(**document))
     return users

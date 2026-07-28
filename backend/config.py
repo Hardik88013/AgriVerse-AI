@@ -17,6 +17,16 @@ class Settings(BaseSettings):
     """
     mongodb_uri: str = Field(..., env='MONGODB_URI')
     database_name: str = Field("agrisense_db", env='DATABASE_NAME')
+    
+    # Auth & Security
+    jwt_secret: str = Field(..., env='JWT_SECRET')
+    
+    # Email Settings
+    smtp_host: str = Field(..., env='SMTP_HOST')
+    smtp_port: int = Field(2525, env='SMTP_PORT')
+    smtp_user: str = Field(..., env='SMTP_USER')
+    smtp_pass: str = Field(..., env='SMTP_PASS')
+    frontend_url: str = Field("http://localhost:5173", env='FRONTEND_URL')
 
     class Config:
         env_file = ".env"

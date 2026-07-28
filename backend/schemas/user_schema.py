@@ -1,29 +1,44 @@
 # Purpose: To define the shape of our User data.
-# How it works: Uses Pydantic to validate data incoming from the frontend (CreateUser) and data outgoing to the frontend (UserResponse).
-# Why it exists: To ensure our API only accepts clean, valid data (e.g., ensuring an email is an actual email string).
-# Used by: routers/users_router.py
-
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from datetime import datetime
 
 class UserCreate(BaseModel):
-    """
-    Schema for creating a new user (Incoming Data).
-    Input: JSON with name, email, and password.
-    """
-    name: str = Field(..., min_length=2, max_length=50, example="John Doe")
-    email: EmailStr = Field(..., example="john@example.com")
-    password: str = Field(..., min_length=6, example="secret123")
+    """Schema for user registration."""
+    name: str = Field(..., min_length=2, max_length=50)
+    email: EmailStr
+    phone: Optional[str] = Field(None, max_length=15)
+    password: str = Field(..., min_length=8)
+    role: str = Field(default="Farmer", pattern="^(Admin|Farmer|Buyer)$")
 
-class UserResponse(BaseModel):
-    """
-    Schema for returning a user (Outgoing Data).
-    Output: JSON with id, name, and email. (We never return the password!)
-    """
+class UserLogin(BaseModel):
+    """Schema for logging in."""
+    email: EmailStr
+    password: str
+
+class UserInDB(BaseModel):
+    """Schema representing the document exactly as it is stored in MongoDB."""
     id: str
     name: str
     email: str
+    phone: Optional[str]
+    hashed_password: str
+    role: str
+    isVerified: bool = False
+    profilePhoto: Optional[str] = None
+    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    updatedAt: datetime = Field(default_factory=datetime.utcnow)
+
+class UserResponse(BaseModel):
+    """Schema for returning user data securely (NO PASSWORDS!)."""
+    id: str
+    name: str
+    email: str
+    phone: Optional[str]
+    role: str
+    isVerified: bool
+    profilePhoto: Optional[str]
+    createdAt: datetime
 
     class Config:
-        # This tells Pydantic to ignore MongoDB's complex BSON object IDs when converting
         from_attributes = True
