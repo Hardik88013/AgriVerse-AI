@@ -10,6 +10,8 @@ import NotFound from './pages/NotFound';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Dashboard from './pages/Dashboard';
+import AddFarm from './pages/AddFarm';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -30,6 +32,8 @@ function App() {
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/add-farm" element={<AddFarm />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

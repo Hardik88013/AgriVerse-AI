@@ -28,6 +28,7 @@ const Navbar = () => {
             
             {user ? (
               <>
+                <Link to="/dashboard" className="font-semibold text-yellow-100 hover:text-white">Dashboard</Link>
                 <Link to="/profile" className="font-semibold text-yellow-100 hover:text-white">Profile ({user.name})</Link>
                 <button onClick={handleLogout} className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-bold transition-colors">
                   Logout

@@ -27,6 +27,11 @@ class Settings(BaseSettings):
     smtp_user: str = Field(..., env='SMTP_USER')
     smtp_pass: str = Field(..., env='SMTP_PASS')
     frontend_url: str = Field("http://localhost:5173", env='FRONTEND_URL')
+    
+    # Cloudinary
+    cloudinary_cloud_name: str = Field(..., env='CLOUDINARY_CLOUD_NAME')
+    cloudinary_api_key: str = Field(..., env='CLOUDINARY_API_KEY')
+    cloudinary_api_secret: str = Field(..., env='CLOUDINARY_API_SECRET')
 
     class Config:
         env_file = ".env"
