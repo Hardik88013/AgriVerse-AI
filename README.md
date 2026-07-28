@@ -8,7 +8,6 @@ This is a Full-Stack Monorepo consisting of:
 - `frontend/`: React + TypeScript + Tailwind CSS
 - `backend/`: Python + FastAPI
 - `ml/`: Machine Learning Models (Scikit-learn, PyTorch, XGBoost)
-- `study/`: Learning materials, guides, and exercises for each phase. (Note: `study/` is excluded from version control).
 
 ## Tech Stack
 - **Frontend**: React, TypeScript, Tailwind CSS
