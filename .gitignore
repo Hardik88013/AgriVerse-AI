@@ -1,0 +1,23 @@
+# Study material (Excluded from Git as per requirements)
+study/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+.venv/
+*.log
+
+# Node
+node_modules/
+dist/
+build/
+.npm
+.eslintcache
+
+# OS
+.DS_Store
+Thumbs.db
